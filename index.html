@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nancy Test - 测试管理平台</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+    </script>
+    <style>
+        :root {
+            --bg-dark: #1a1d23;
+            --bg-sidebar: #1e2130;
+            --bg-main: #f5f6f8;
+            --bg-card: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #6b7280;
+            --text-light: #9ca3af;
+            --accent: #4f6ef7;
+            --accent-hover: #3d5ce5;
+            --accent-light: #eef1ff;
+            --border: #e5e7eb;
+            --border-light: #f0f1f3;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.10);
+            --radius-sm: 6px;
+            --radius: 10px;
+            --radius-lg: 14px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ========== 登录界面 ========== */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1d28 0%, #1e2746 40%, #1a2240 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .login-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .login-container {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 44px 38px 36px;
+            width: 420px;
+            max-width: 94vw;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            position: relative;
+        }
+        .login-container .logo-icon {
+            width: 52px;
+            height: 52px;
+            background: var(--accent);
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 24px;
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+        .login-container h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+        }
+        .login-container .subtitle {
+            font-size: 13px;
+            color: #9ca3af;
+            margin-bottom: 28px;
+        }
+        .login-container .input-group {
+            position: relative;
+            margin-bottom: 14px;
+            text-align: left;
+        }
+        .login-container label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 5px;
+            letter-spacing: 0.3px;
+        }
+        .login-container input[type="text"],
+        .login-container input[type="tel"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: var(--transition);
+            outline: none;
+            background: #fafbfc;
+            letter-spacing: 0.5px;
+        }
+        .login-container input:focus {
+            border-color: var(--accent);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(79, 110, 247, 0.08);
+        }
+        .phone-row {
+            display: flex;
+            gap: 10px;
+        }
+        .phone-row input {
+            flex: 1;
+        }
+        .btn-get-code {
+            white-space: nowrap;
+            padding: 12px 16px;
+            background: #eef1ff;
+            color: var(--accent);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: var(--transition);
+            letter-spacing: 0.3px;
+        }
+        .btn-get-code:hover {
+            background: #dde3ff;
+            border-color: #c5cffd;
+        }
+        .btn-get-code:disabled {
+            background: #f3f4f6;
+            color: #c5c9d2;
+            cursor: not-allowed;
+            border-color: #e5e7eb;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 8px;
+            letter-spacing: 0.4px;
+        }
+        .btn-login:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 6px 20px rgba(79, 110, 247, 0.3);
+        }
+        .btn-login:active {
+            transform: scale(0.97);
+        }
+        .login-hint {
+            font-size: 11px;
+            color: #b0b7c3;
+            margin-top: 14px;
+            letter-spacing: 0.2px;
+        }
+        .login-hint span {
+            color: var(--accent);
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: #fff;
+            padding: 12px 22px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 2000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.35s ease, transform 0.35s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            letter-spacing: 0.3px;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            background: #059669;
+        }
+        .toast.error {
+            background: #dc2626;
+        }
+
+        /* ========== 主界面布局 ========== */
+        .app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            background: #f5f6f8;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        .app-container.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 左侧导航栏 - 1/6 */
+        .sidebar {
+            width: calc(100vw / 6);
+            min-width: 200px;
+            max-width: 260px;
+            background: var(--bg-sidebar);
+            color: #c9cdd4;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            position: relative;
+        }
+        .sidebar-header {
+            padding: 22px 18px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: center;
+        }
+        .sidebar-header .brand {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .sidebar-header .brand .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .sidebar-header .brand-sub {
+            font-size: 10px;
+            color: #6b7280;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+        .sidebar-nav {
+            flex: 1;
+            padding: 10px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sidebar-nav .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            color: #a8adb8;
+            user-select: none;
+            position: relative;
+        }
+        .sidebar-nav .nav-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: #e0e3e8;
+        }
+        .sidebar-nav .nav-item.active {
+            background: rgba(79, 110, 247, 0.18);
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .sidebar-nav .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 0 3px 3px 0;
+        }
+        .sidebar-nav .nav-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .sidebar-footer {
+            padding: 14px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 11px;
+            color: #5c6068;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        .sidebar-footer .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .sidebar-footer .user-badge:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .sidebar-footer .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .sidebar-footer .user-info {
+            text-align: left;
+            overflow: hidden;
+        }
+        .sidebar-footer .user-name {
+            color: #d1d5db;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sidebar-footer .user-phone {
+            color: #6b7280;
+            font-size: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .btn-logout {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+        .btn-logout:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* 右侧主内容区 - 5/6 */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f5f6f8;
+            overflow: hidden;
+            min-width: 0;
+        }
+        .main-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 14px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-light);
+            gap: 10px;
+            box-shadow: var(--shadow-sm);
+            z-index: 5;
+            flex-shrink: 0;
+        }
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 24px;
+            padding: 7px 10px 7px 16px;
+            transition: var(--transition);
+            min-width: 240px;
+        }
+        .search-wrapper:focus-within {
+            border-color: var(--accent);
+            background: #fff;
+            box-shadow: 0 0 0 5px rgba(79, 110, 247, 0.06);
+        }
+        .search-wrapper input {
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 13px;
+            width: 180px;
+            color: #374151;
+        }
+        .search-wrapper input::placeholder {
+            color: #b0b7c3;
+        }
+        .btn-search {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 7px 16px;
+            border-radius: 18px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: var(--transition);
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .btn-search:hover {
+            background: var(--accent-hover);
+        }
+        .search-hint {
+            font-size: 11px;
+            color: #b0b7c3;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px 24px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: #f5f6f8;
+        }
+        .main-content::-webkit-scrollbar {
+            width: 5px;
+        }
+        .main-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .main-content::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+
+        /* 内容面板 */
+        .content-panel {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            min-height: 300px;
+            animation: fadeSlideIn 0.3s ease;
+        }
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .content-panel h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+            letter-spacing: -0.2px;
+        }
+        .content-panel .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 10px;
+            letter-spacing: 0.2px;
+        }
+
+        /* 表格样式 */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        table thead {
+            background: #f8fafc;
+        }
+        table thead th {
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        table tbody td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #374151;
+            white-space: nowrap;
+        }
+        table tbody tr {
+            transition: var(--transition);
+        }
+        table tbody tr:hover {
+            background: #fafbfd;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+        .badge-pass {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .badge-fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .badge-running {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #b0b7c3;
+        }
+        .empty-state .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .empty-state p {
+            font-size: 13px;
+        }
+
+        /* 按钮 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 4px 12px rgba(79, 110, 247, 0.25);
+        }
+        .btn-outline {
+            background: #fff;
+            color: var(--accent);
+            border: 2px solid #dde3ff;
+        }
+        .btn-outline:hover {
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+        }
+        .btn-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            background: #eef1ff;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .btn-icon:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: scale(1.08);
+        }
+        .btn-icon.added {
+            background: #d1fae5;
+            color: #059669;
+            cursor: default;
+            pointer-events: none;
+        }
+        .btn-icon.added:hover {
+            transform: none;
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* 用户搜索结果 */
+        .search-results {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: #f9fafb;
+            border-radius: 8px;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+        .search-result-item:hover {
+            background: #fff;
+            border-color: #e5e7eb;
+            box-shadow: var(--shadow-sm);
+        }
+        .search-result-item .user-detail {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .search-result-item .mini-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .search-result-item .user-meta {
+            line-height: 1.3;
+        }
+        .search-result-item .user-meta .uname {
+            font-weight: 600;
+            font-size: 13px;
+            color: #1f2937;
+        }
+        .search-result-item .user-meta .uphone {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        /* 小组队员标签 */
+        .team-members {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .member-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background: #eef1ff;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+        }
+        .member-tag .remove-member {
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 14px;
+            transition: var(--transition);
+            line-height: 1;
+        }
+        .member-tag .remove-member:hover {
+            color: #ef4444;
+        }
+
+        /* 上传区域 */
+        .upload-zone {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #d1d5db;
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #fafbfc;
+            text-align: center;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: #f8faff;
+            box-shadow: 0 0 0 6px rgba(79, 110, 247, 0.04);
+        }
+        .upload-zone .plus-circle {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 300;
+            transition: var(--transition);
+        }
+        .upload-zone:hover .plus-circle {
+            transform: scale(1.06);
+            box-shadow: 0 8px 24px rgba(79, 110, 247, 0.3);
+        }
+        .upload-zone .upload-text {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .upload-zone .upload-subtext {
+            font-size: 11px;
+            color: #b0b7c3;
+        }
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+
+        /* 信息卡片 */
+        .info-card {
+            background: #f9fafb;
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            border: 1px solid var(--border-light);
+        }
+        .info-card .info-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+        .info-card .info-row {
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: #4b5563;
+        }
+        .info-card .info-row strong {
+            color: #1f2937;
+            font-weight: 600;
+            display: inline-block;
+            min-width: 70px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .sidebar {
+                min-width: 60px;
+                max-width: 60px;
+            }
+            .sidebar-nav .nav-item {
+                justify-content: center;
+                padding: 12px 8px;
+                font-size: 0;
+                gap: 0;
+            }
+            .sidebar-nav .nav-icon {
+                font-size: 18px;
+                margin: 0;
+            }
+            .sidebar-header .brand {
+                font-size: 0;
+            }
+            .sidebar-header .brand .dot {
+                width: 10px;
+                height: 10px;
+            }
+            .sidebar-footer .user-info {
+                display: none;
+            }
+            .sidebar-footer .user-badge {
+                justify-content: center;
+            }
+            .search-wrapper {
+                min-width: 160px;
+            }
+            .search-wrapper input {
+                width: 100px;
+            }
+            .main-content {
+                padding: 14px 10px;
+            }
+        }
+        @media (max-width: 600px) {
+            .sidebar {
+                min-width: 44px;
+                max-width: 44px;
+            }
+            .main-topbar {
+                padding: 10px 8px;
+                gap: 6px;
+            }
+            .search-wrapper {
+                min-width: 120px;
+                padding: 6px 8px 6px 10px;
+            }
+            .search-wrapper input {
+                width: 70px;
+                font-size: 11px;
+            }
+            .btn-search {
+                padding: 5px 10px;
+                font-size: 10px;
+            }
+            .content-panel {
+                padding: 14px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toast 提示 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ==================== 登录界面 ==================== -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-container">
+            <div class="logo-icon">NT</div>
+            <h2>Nancy Test</h2>
+            <p class="subtitle">测试管理平台 · 手机号验证码登录</p>
+            <div class="input-group">
+                <label>📱 手机号</label>
+                <div class="phone-row">
+                    <input type="tel" id="loginPhone" placeholder="请输入手机号" maxlength="11" value="13800000001">
+                    <button class="btn-get-code" id="btnGetCode" onclick="sendVerificationCode()">获取验证码</button>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>🔐 验证码</label>
+                <input type="text" id="loginCode" placeholder="请输入验证码" maxlength="6">
+            </div>
+            <button class="btn-login" onclick="handleLogin()">登 录</button>
+            <p class="login-hint">演示账号：<span onclick="fillDemo('13800000001')">13800000001</span>（张三）验证码任意4位数字</p>
+        </div>
+    </div>
+
+    <!-- ==================== 主界面 ==================== -->
+    <div class="app-container" id="appContainer">
+        <!-- 左侧导航栏 1/6 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand"><span class="dot"></span> Nancy Test</div>
+                <div class="brand-sub">Test Platform</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item" data-nav="user" onclick="switchNav('user')">
+                    <span class="nav-icon">👤</span> User
+                </div>
+                <div class="nav-item" data-nav="club" onclick="switchNav('club')">
+                    <span class="nav-icon">👥</span> Club
+                </div>
+                <div class="nav-item" data-nav="caselib" onclick="switchNav('caselib')">
+                    <span class="nav-icon">📋</span> Case Lib
+                </div>
+                <div class="nav-item" data-nav="testprogram" onclick="switchNav('testprogram')">
+                    <span class="nav-icon">🧪</span> Test Program
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-badge" onclick="switchNav('user')">
+                    <div class="avatar" id="sidebarAvatar">张</div>
+                    <div class="user-info">
+                        <div class="user-name" id="sidebarName">张三</div>
+                        <div class="user-phone" id="sidebarPhone">138****0001</div>
+                    </div>
+                    <button class="btn-logout" title="退出登录" onclick="handleLogout()">⏻</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右侧主内容区 5/6 -->
+        <div class="main-area">
+            <!-- 顶部搜索栏 -->
+            <div class="main-topbar">
+                <span class="search-hint" id="searchHint">🔍 全局搜索</span>
+                <div class="search-wrapper" id="searchWrapper">
+                    <input type="text" id="searchInput" placeholder="搜索..." onkeydown="if(event.key==='Enter')handleSearch()">
+                    <button class="btn-search" onclick="handleSearch()">搜索</button>
+                </div>
+            </div>
+            <!-- 内容区域 -->
+            <div class="main-content" id="mainContent">
+                <!-- 动态渲染 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== 全局数据 ====================
+            const STORAGE_KEY = 'nancy_test_data';
+            const SESSION_KEY = 'nancy_test_session';
+
+            // 预设用户数据
+            const defaultUsers = [
+                { id: 'u1', name: '张三', phone: '13800000001', avatar: '张' },
+                { id: 'u2', name: '李四', phone: '13800000002', avatar: '李' },
+                { id: 'u3', name: '王五', phone: '13800000003', avatar: '王' },
+                { id: 'u4', name: '赵六', phone: '13800000004', avatar: '赵' },
+                { id: 'u5', name: '陈小明', phone: '13900000005', avatar: '陈' },
+                { id: 'u6', name: '刘大伟', phone: '13900000006', avatar: '刘' },
+                { id: 'u7', name: '周芳', phone: '13700000007', avatar: '周' },
+                { id: 'u8', name: '吴杰', phone: '13700000008', avatar: '吴' },
+            ];
+
+            // 预设测试程序数据
+            const defaultTestPrograms = [
+                { caseName: '登录功能测试', caseId: 'TC-001', version: 'v2.3.1', creater: '张三',
+                    testStatus: '已完成', testResult: '通过' },
+                { caseName: '支付流程测试', caseId: 'TC-002', version: 'v2.3.0', creater: '李四',
+                    testStatus: '执行中', testResult: '待确认' },
+                { caseName: '用户注册测试', caseId: 'TC-003', version: 'v2.3.2', creater: '张三',
+                    testStatus: '已完成', testResult: '通过' },
+                { caseName: '数据导出测试', caseId: 'TC-004', version: 'v2.2.9', creater: '王五',
+                    testStatus: '已完成', testResult: '失败' },
+                { caseName: 'API接口测试', caseId: 'TC-005', version: 'v2.3.1', creater: '赵六',
+                    testStatus: '待执行', testResult: '未开始' },
+                { caseName: '性能压力测试', caseId: 'TC-006', version: 'v2.3.0', creater: '李四',
+                    testStatus: '执行中', testResult: '待确认' },
+            ];
+
+            // 获取或初始化持久化数据
+            function getStoredData() {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    try { return JSON.parse(raw); } catch (e) { /* fall through */ }
+                }
+                return {
+                    users: JSON.parse(JSON.stringify(defaultUsers)),
+                    teams: {}, // { ownerPhone: [memberUserIds...] }
+                    caseLibRecords: [], // 上传的case lib数据
+                    testPrograms: JSON.parse(JSON.stringify(defaultTestPrograms)),
+                };
+            }
+
+            function saveStoredData(data) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            }
+
+            let appData = getStoredData();
+
+            // 会话
+            function getSession() {
+                const raw = localStorage.getItem(SESSION_KEY);
+                if (raw) {
+                    try { return JSON.parse(raw); } catch (e) { /* fall through */ }
+                }
+                return null;
+            }
+
+            function saveSession(session) {
+                localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+            }
+
+            function clearSession() {
+                localStorage.removeItem(SESSION_KEY);
+            }
+
+            let currentSession = getSession();
+            let currentNav = 'user'; // 当前导航
+
+            // ==================== DOM引用 ====================
+            const loginOverlay = document.getElementById('loginOverlay');
+            const appContainer = document.getElementById('appContainer');
+            const toast = document.getElementById('toast');
+            const loginPhoneInput = document.getElementById('loginPhone');
+            const loginCodeInput = document.getElementById('loginCode');
+            const btnGetCode = document.getElementById('btnGetCode');
+            const mainContent = document.getElementById('mainContent');
+            const searchInput = document.getElementById('searchInput');
+            const searchHint = document.getElementById('searchHint');
+            const searchWrapper = document.getElementById('searchWrapper');
+            const sidebarAvatar = document.getElementById('sidebarAvatar');
+            const sidebarName = document.getElementById('sidebarName');
+            const sidebarPhone = document.getElementById('sidebarPhone');
+
+            let codeTimer = null;
+            let codeCountdown = 0;
+            let currentVerificationCode = '';
+
+            // ==================== Toast ====================
+            function showToast(msg, type = '') {
+                toast.textContent = msg;
+                toast.className = 'toast ' + type + ' show';
+                clearTimeout(toast._timeout);
+                toast._timeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2200);
+            }
+
+            // ==================== 登录逻辑 ====================
+            window.sendVerificationCode = function() {
+                if (codeCountdown > 0) return;
+                const phone = loginPhoneInput.value.trim();
+                if (!/^1[3-9]\d{9}$/.test(phone)) {
+                    showToast('请输入有效的11位手机号', 'error');
+                    return;
+                }
+                // 生成4位验证码
+                currentVerificationCode = String(Math.floor(1000 + Math.random() * 9000));
+                showToast('验证码已发送：' + currentVerificationCode + '（模拟短信）', 'success');
+                console.log('📱 验证码（模拟）:', currentVerificationCode);
+                // 倒计时
+                codeCountdown = 60;
+                btnGetCode.disabled = true;
+                btnGetCode.textContent = codeCountdown + 's';
+                codeTimer = setInterval(() => {
+                    codeCountdown--;
+                    if (codeCountdown <= 0) {
+                        clearInterval(codeTimer);
+                        codeTimer = null;
+                        btnGetCode.disabled = false;
+                        btnGetCode.textContent = '获取验证码';
+                    } else {
+                        btnGetCode.textContent = codeCountdown + 's';
+                    }
+                }, 1000);
+            };
+
+            window.handleLogin = function() {
+                const phone = loginPhoneInput.value.trim();
+                const code = loginCodeInput.value.trim();
+                if (!phone) {
+                    showToast('请输入手机号', 'error');
+                    return;
+                }
+                if (!code) {
+                    showToast('请输入验证码', 'error');
+                    return;
+                }
+                if (!currentVerificationCode) {
+                    showToast('请先获取验证码', 'error');
+                    return;
+                }
+                if (code !== currentVerificationCode) {
+                    showToast('验证码错误，请重试', 'error');
+                    return;
+                }
+                // 查找或创建用户
+                let user = appData.users.find(u => u.phone === phone);
+                if (!user) {
+                    // 新用户自动注册
+                    user = {
+                        id: 'u' + Date.now(),
+                        name: '用户' + phone.slice(-4),
+                        phone: phone,
+                        avatar: phone.slice(-2),
+                    };
+                    appData.users.push(user);
+                    saveStoredData(appData);
+                }
+                // 创建会话
+                const session = {
+                    userId: user.id,
+                    phone: user.phone,
+                    name: user.name,
+                    avatar: user.avatar,
+                    loginTime: new Date().toLocaleString('zh-CN'),
+                    loginTimestamp: Date.now(),
+                };
+                saveSession(session);
+                currentSession = session;
+                // 更新UI
+                updateSidebarUser();
+                // 切换界面
+                loginOverlay.classList.add('hidden');
+                appContainer.classList.add('visible');
+                // 重置验证码
+                currentVerificationCode = '';
+                loginCodeInput.value = '';
+                if (codeTimer) {
+                    clearInterval(codeTimer);
+                    codeTimer = null;
+                    codeCountdown = 0;
+                    btnGetCode.disabled = false;
+                    btnGetCode.textContent = '获取验证码';
+                }
+                // 默认显示user页
+                switchNav('user');
+                showToast('登录成功！欢迎回来，' + user.name, 'success');
+            };
+
+            window.handleLogout = function() {
+                clearSession();
+                currentSession = null;
+                currentVerificationCode = '';
+                loginCodeInput.value = '';
+                appContainer.classList.remove('visible');
+                loginOverlay.classList.remove('hidden');
+                if (codeTimer) {
+                    clearInterval(codeTimer);
+                    codeTimer = null;
+                    codeCountdown = 0;
+                    btnGetCode.disabled = false;
+                    btnGetCode.textContent = '获取验证码';
+                }
+                showToast('已退出登录');
+            };
+
+            window.fillDemo = function(phone) {
+                loginPhoneInput.value = phone;
+                loginCodeInput.focus();
+            };
+
+            function updateSidebarUser() {
+                if (!currentSession) return;
+                sidebarAvatar.textContent = currentSession.avatar || '?';
+                sidebarName.textContent = currentSession.name || '未知用户';
+                sidebarPhone.textContent = (currentSession.phone || '').replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+            }
+
+            // ==================== 导航切换 ====================
+            window.switchNav = function(nav) {
+                currentNav = nav;
+                // 更新导航激活状态
+                document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
+                    item.classList.toggle('active', item.dataset.nav === nav);
+                });
+                // 更新搜索提示
+                updateSearchHint();
+                // 清空搜索
+                searchInput.value = '';
+                // 渲染内容
+                renderContent();
+            };
+
+            function updateSearchHint() {
+                const hints = {
+                    'user': '👤 用户信息页',
+                    'club': '🔍 搜索手机号或用户名添加队员',
+                    'caselib': '🔍 搜索已上传的用例',
+                    'testprogram': '🔍 搜索Case Name或Case ID',
+                };
+                searchHint.textContent = hints[currentNav] || '🔍 搜索';
+                if (currentNav === 'club') {
+                    searchWrapper.style.borderColor = '#4f6ef7';
+                } else {
+                    searchWrapper.style.borderColor = '#e5e7eb';
+                }
+            }
+
+            // ==================== 搜索处理 ====================
+            window.handleSearch = function() {
+                const query = searchInput.value.trim();
+                if (!query && currentNav !== 'club') {
+                    renderContent();
+                    return;
+                }
+                switch (currentNav) {
+                    case 'club':
+                        renderClubContent(query);
+                        break;
+                    case 'testprogram':
+                        renderTestProgramContent(query);
+                        break;
+                    case 'caselib':
+                        renderCaseLibContent(query);
+                        break;
+                    default:
+                        renderContent();
+                }
+            };
+
+            // ==================== 内容渲染 ====================
+            function renderContent(query) {
+                switch (currentNav) {
+                    case 'user':
+                        renderUserContent();
+                        break;
+                    case 'club':
+                        renderClubContent(query || '');
+                        break;
+                    case 'caselib':
+                        renderCaseLibContent(query || '');
+                        break;
+                    case 'testprogram':
+                        renderTestProgramContent(query || '');
+                        break;
+                    default:
+                        mainContent.innerHTML = '<div class="content-panel"><p>请选择导航项</p></div>';
+                }
+            }
+
+            // --- User 页面 ---
+            function renderUserContent() {
+                if (!currentSession) return;
+                const user = appData.users.find(u => u.id === currentSession.userId) || {};
+                const loginTime = currentSession.loginTime || '未知';
+                const html = `
+                    <div class="content-panel">
+                        <h3>👤 用户信息</h3>
+                        <div class="info-card" style="max-width:500px;">
+                            <div class="info-icon">🪪</div>
+                            <div>
+                                <div class="info-row"><strong>姓 名：</strong>${escapeHTML(user.name || currentSession.name || '未知')}</div>
+                                <div class="info-row"><strong>手机号：</strong>${escapeHTML(user.phone || currentSession.phone || '未知')}</div>
+                                <div class="info-row"><strong>登录时间：</strong>${escapeHTML(loginTime)}</div>
+                                <div class="info-row"><strong>用户ID：</strong>${escapeHTML(user.id || currentSession.userId)}</div>
+                                <div class="info-row"><strong>登录方式：</strong>📱 手机号 + 验证码</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                mainContent.innerHTML = html;
+            }
+
+            // --- Club 页面 ---
+            function renderClubContent(query) {
+                const ownerPhone = currentSession ? currentSession.phone : '';
+                const teamMemberIds = appData.teams[ownerPhone] || [];
+                const teamMembers = teamMemberIds.map(id => appData.users.find(u => u.id === id)).filter(Boolean);
+
+                let searchResultsHTML = '';
+                let matchedUsers = [];
+                if (query && query.trim()) {
+                    const q = query.trim().toLowerCase();
+                    matchedUsers = appData.users.filter(u => {
+                        return u.phone.includes(q) || u.name.toLowerCase().includes(q);
+                    });
+                    if (matchedUsers.length > 0) {
+                        const resultItems = matchedUsers.map(u => {
+                            const alreadyInTeam = teamMemberIds.includes(u.id);
+                            const isSelf = u.phone === ownerPhone;
+                            let actionHTML = '';
+                            if (isSelf) {
+                                actionHTML =
+                                    '<span style="font-size:11px;color:#9ca3af;">自己</span>';
+                            } else if (alreadyInTeam) {
+                                actionHTML =
+                                    '<button class="btn-icon added" disabled>✓</button>';
+                            } else {
+                                actionHTML =
+                                    `<button class="btn-icon" onclick="addTeamMember('${u.id}')" title="添加到小组">+</button>`;
+                            }
+                            return `
+                                <div class="search-result-item">
+                                    <div class="user-detail">
+                                        <div class="mini-avatar">${escapeHTML(u.avatar)}</div>
+                                        <div class="user-meta">
+                                            <div class="uname">${escapeHTML(u.name)}</div>
+                                            <div class="uphone">${escapeHTML(u.phone)}</div>
+                                        </div>
+                                    </div>
+                                    ${actionHTML}
+                                </div>
+                            `;
+                        }).join('');
+                        searchResultsHTML = `
+                            <div style="margin-top:12px;">
+                                <div class="section-title">🔍 搜索结果（${matchedUsers.length}人）</div>
+                                <div class="search-results">${resultItems}</div>
+                            </div>
+                        `;
+                    } else {
+                        searchResultsHTML = `
+                            <div style="margin-top:12px;color:#9ca3af;font-size:13px;">未找到匹配的用户</div>
+                        `;
+                    }
+                }
+
+                const teamTagsHTML = teamMembers.length > 0 ?
+                    teamMembers.map(m => `
+                        <span class="member-tag">
+                            ${escapeHTML(m.avatar)} ${escapeHTML(m.name)}
+                            <span class="remove-member" onclick="removeTeamMember('${m.id}')" title="移出小组">×</span>
+                        </span>
+                    `).join('') :
+                    '<span style="color:#b0b7c3;font-size:12px;">暂无队员，请搜索并添加</span>';
+
+                const html = `
+                    <div class="content-panel">
+                        <h3>👥 Club · 我的小组</h3>
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <span class="section-title" style="margin:0;">📋 当前队员：</span>
+                            <button class="btn btn-outline btn-sm" onclick="focusSearch()">+ 添加队员</button>
+                        </div>
+                        <div class="team-members">${teamTagsHTML}</div>
+                        <p style="font-size:11px;color:#9ca3af;margin-top:6px;">💡 使用右上角搜索框搜索手机号或用户名，点击 <b>+</b> 号添加队员</p>
+                        ${searchResultsHTML}
+                    </div>
+                `;
+                mainContent.innerHTML = html;
+            }
+
+            window.focusSearch = function() {
+                searchInput.focus();
+                searchHint.textContent = '🔍 输入手机号或用户名搜索...';
+            };
+
+            window.addTeamMember = function(userId) {
+                if (!currentSession) return;
+                const ownerPhone = currentSession.phone;
+                if (!appData.teams[ownerPhone]) {
+                    appData.teams[ownerPhone] = [];
+                }
+                if (appData.teams[ownerPhone].includes(userId)) {
+                    showToast('该用户已在小组中', 'error');
+                    return;
+                }
+                const user = appData.users.find(u => u.id === userId);
+                if (user && user.phone === ownerPhone) {
+                    showToast('不能添加自己', 'error');
+                    return;
+                }
+                appData.teams[ownerPhone].push(userId);
+                saveStoredData(appData);
+                showToast('已添加队员：' + (user ? user.name : userId), 'success');
+                // 重新渲染
+                const query = searchInput.value.trim();
+                renderClubContent(query);
+            };
+
+            window.removeTeamMember = function(userId) {
+                if (!currentSession) return;
+                const ownerPhone = currentSession.phone;
+                if (!appData.teams[ownerPhone]) return;
+                appData.teams[ownerPhone] = appData.teams[ownerPhone].filter(id => id !== userId);
+                saveStoredData(appData);
+                const user = appData.users.find(u => u.id === userId);
+                showToast('已移除队员：' + (user ? user.name : userId), 'success');
+                const query = searchInput.value.trim();
+                renderClubContent(query);
+            };
+
+            // --- Case Lib 页面 ---
+            function renderCaseLibContent(query) {
+                let records = appData.caseLibRecords || [];
+                if (query && query.trim()) {
+                    const q = query.trim().toLowerCase();
+                    records = records.filter(r => {
+                        return (r.version && r.version.toLowerCase().includes(q)) ||
+                            (r['pre-test'] && r['pre-test'].toLowerCase().includes(q)) ||
+                            (r['test steps'] && r['test steps'].toLowerCase().includes(q)) ||
+                            (r['expectation'] && r['expectation'].toLowerCase().includes(q)) ||
+                            (r['test result'] && r['test result'].toLowerCase().includes(q));
+                    });
+                }
+
+                let tableHTML = '';
+                if (records.length > 0) {
+                    const headers = ['version', 'pre-test', 'test steps', 'expectation', 'test result'];
+                    const headerRow = headers.map(h => `<th>${escapeHTML(h)}</th>`).join('');
+                    const bodyRows = records.map((r, i) => {
+                        const cells = headers.map(h => `<td>${escapeHTML(String(r[h] ?? ''))}</td>`)
+                            .join('');
+                        return `<tr>${cells}</tr>`;
+                    }).join('');
+                    tableHTML = `
+                        <div class="table-container" style="margin-top:16px;">
+                            <table>
+                                <thead><tr>${headerRow}</tr></thead>
+                                <tbody>${bodyRows}</tbody>
+                            </table>
+                        </div>
+                        <p style="font-size:11px;color:#9ca3af;margin-top:8px;">共 ${records.length} 条记录</p>
+                    `;
+                } else if (appData.caseLibRecords.length > 0 && query) {
+                    tableHTML =
+                        '<div class="empty-state"><div class="empty-icon">🔍</div><p>没有匹配的用例记录</p></div>';
+                }
+
+                const html = `
+                    <div class="content-panel">
+                        <h3>📋 Case Lib · 用例库</h3>
+                        <div class="upload-zone" onclick="document.getElementById('caseLibFileInput').click()" title="点击上传Excel文件">
+                            <div class="plus-circle">+</div>
+                            <div class="upload-text">上传Excel用例文件</div>
+                            <div class="upload-subtext">首行列名：version, pre-test, test steps, expectation, test result</div>
+                            <input type="file" id="caseLibFileInput" accept=".xlsx,.xls" onchange="handleCaseLibUpload(event)" style="display:none;">
+                        </div>
+                        ${tableHTML}
+                        ${appData.caseLibRecords.length === 0 && !query ? '<div class="empty-state"><p style="margin-top:12px;">尚未上传用例数据</p></div>' : ''}
+                        ${appData.caseLibRecords.length > 0 && !query ? `<button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="clearCaseLib()">清空用例库</button>` : ''}
+                    </div>
+                `;
+                mainContent.innerHTML = html;
+            }
+
+            window.handleCaseLibUpload = function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+                        if (jsonData.length === 0) {
+                            showToast('Excel文件为空', 'error');
+                            return;
+                        }
+                        // 标准化列名（转为小写并处理空格）
+                        const normalizedRecords = jsonData.map(row => {
+                            const record = {};
+                            const colMap = {
+                                'version': 'version',
+                                'pre-test': 'pre-test',
+                                'pretest': 'pre-test',
+                                'pre test': 'pre-test',
+                                'test steps': 'test steps',
+                                'teststeps': 'test steps',
+                                'test_steps': 'test steps',
+                                'expectation': 'expectation',
+                                'test result': 'test result',
+                                'testresult': 'test result',
+                                'test_result': 'test result',
+                            };
+                            for (const [key, value] of Object.entries(row)) {
+                                const lk = key.toLowerCase().trim().replace(/_/g, ' ').replace(/\s+/g,
+                                    ' ');
+                                const mapped = colMap[lk] || lk;
+                                record[mapped] = value;
+                            }
+                            // 确保关键列存在
+                            if (!record['version']) record['version'] = '';
+                            if (!record['pre-test']) record['pre-test'] = '';
+                            if (!record['test steps']) record['test steps'] = '';
+                            if (!record['expectation']) record['expectation'] = '';
+                            if (!record['test result']) record['test result'] = '';
+                            return record;
+                        });
+                        appData.caseLibRecords = appData.caseLibRecords.concat(normalizedRecords);
+                        saveStoredData(appData);
+                        showToast('成功导入 ' + normalizedRecords.length + ' 条用例记录', 'success');
+                        renderCaseLibContent(searchInput.value.trim());
+                    } catch (err) {
+                        console.error('Excel解析失败:', err);
+                        showToast('Excel解析失败，请检查文件格式', 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+                // 重置input以便重新选择同一文件
+                event.target.value = '';
+            };
+
+            window.clearCaseLib = function() {
+                if (confirm('确定要清空所有用例库数据吗？此操作不可撤销。')) {
+                    appData.caseLibRecords = [];
+                    saveStoredData(appData);
+                    showToast('用例库已清空');
+                    renderCaseLibContent('');
+                }
+            };
+
+            // --- Test Program 页面 ---
+            function renderTestProgramContent(query) {
+                let programs = appData.testPrograms || [];
+                if (query && query.trim()) {
+                    const q = query.trim().toLowerCase();
+                    programs = programs.filter(p => {
+                        return (p.caseName && p.caseName.toLowerCase().includes(q)) ||
+                            (p.caseId && p.caseId.toLowerCase().includes(q)) ||
+                            (p.version && p.version.toLowerCase().includes(q)) ||
+                            (p.creater && p.creater.toLowerCase().includes(q)) ||
+                            (p.testStatus && p.testStatus.toLowerCase().includes(q)) ||
+                            (p.testResult && p.testResult.toLowerCase().includes(q));
+                    });
+                }
+
+                const getStatusBadge = (status) => {
+                    const s = (status || '').toLowerCase();
+                    if (s.includes('完成') || s.includes('通过')) return 'badge-pass';
+                    if (s.includes('失败')) return 'badge-fail';
+                    if (s.includes('执行中') || s.includes('running')) return 'badge-running';
+                    return 'badge-pending';
+                };
+                const getResultBadge = (result) => {
+                    const r = (result || '').toLowerCase();
+                    if (r.includes('通过') || r.includes('pass')) return 'badge-pass';
+                    if (r.includes('失败') || r.includes('fail')) return 'badge-fail';
+                    if (r.includes('待确认') || r.includes('pending')) return 'badge-pending';
+                    return 'badge-pending';
+                };
+
+                const headerRow = `
+                    <th>Case Name</th>
+                    <th>Case ID</th>
+                    <th>Version</th>
+                    <th>Creater</th>
+                    <th>Test Status</th>
+                    <th>Test Result</th>
+                `;
+                const bodyRows = programs.length > 0 ? programs.map(p => `
+                    <tr>
+                        <td><strong>${escapeHTML(p.caseName || '')}</strong></td>
+                        <td>${escapeHTML(p.caseId || '')}</td>
+                        <td>${escapeHTML(p.version || '')}</td>
+                        <td>${escapeHTML(p.creater || '')}</td>
+                        <td><span class="badge ${getStatusBadge(p.testStatus)}">${escapeHTML(p.testStatus || '')}</span></td>
+                        <td><span class="badge ${getResultBadge(p.testResult)}">${escapeHTML(p.testResult || '')}</span></td>
+                    </tr>
+                `).join('') : `
+                    <tr><td colspan="6" style="text-align:center;color:#b0b7c3;padding:30px;">暂无数据</td></tr>
+                `;
+
+                const html = `
+                    <div class="content-panel">
+                        <h3>🧪 Test Program · 测试程序</h3>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr>${headerRow}</tr></thead>
+                                <tbody>${bodyRows}</tbody>
+                            </table>
+                        </div>
+                        <p style="font-size:11px;color:#9ca3af;margin-top:8px;">共 ${programs.length} 条记录</p>
+                    </div>
+                `;
+                mainContent.innerHTML = html;
+            }
+
+            // ==================== 工具函数 ====================
+            function escapeHTML(str) {
+                if (str === null || str === undefined) return '';
+                const div = document.createElement('div');
+                div.textContent = String(str);
+                return div.innerHTML;
+            }
+
+            // ==================== 初始化 ====================
+            function init() {
+                // 检查会话
+                if (currentSession && currentSession.userId) {
+                    // 已登录
+                    const user = appData.users.find(u => u.id === currentSession.userId);
+                    if (user) {
+                        currentSession.name = user.name;
+                        currentSession.avatar = user.avatar;
+                        currentSession.phone = user.phone;
+                        saveSession(currentSession);
+                    }
+                    updateSidebarUser();
+                    loginOverlay.classList.add('hidden');
+                    appContainer.classList.add('visible');
+                    switchNav('user');
+                } else {
+                    // 未登录
+                    loginOverlay.classList.remove('hidden');
+                    appContainer.classList.remove('visible');
+                    currentSession = null;
+                }
+                updateSearchHint();
+            }
+
+            // 页面加载时初始化
+            init();
+
+            // 暴露到全局
+            window._appData = appData;
+            window._saveData = () => saveStoredData(appData);
+            window._getSession = () => currentSession;
+
+            console.log('✅ Nancy Test 平台已就绪');
+            console.log('📋 预设用户手机号：13800000001（张三）, 13800000002（李四）, 13800000003（王五）, 13800000004（赵六）');
+            console.log('🔑 验证码为随机4位数字，登录时会弹窗提示');
+            console.log('💾 数据存储在 localStorage 中');
+        })();
+    </script>
+</body>
+</html>
