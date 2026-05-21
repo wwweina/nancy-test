@@ -10,8 +10,8 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 # ==================== 配置参数 ====================
 CHANNEL_INDEX = 1          # 激活的 CAN 通道索引
 TESTER_ADDR = 0x7BA        # 诊断仪地址（响应 ID）
-ECU_ADDR_1 = 0x73A          # ECU 地址（物理 ID）
-ECU_ADDR_2 = 0x7DF          # ECU 地址（功能 ID）
+ECU_ADDR_PHYS = 0x73A      # 物理地址
+ECU_ADDR_FUNC = 0x7DF      # 功能地址
 
 # UDS 服务 ID
 SID_3E = 0X3E
@@ -118,7 +118,7 @@ def main():
     logger.log("\n----------功能寻址----------")
     request = [SID_3E, 0x80]
     logger.log(f"请求: {bytes(request).hex().upper()}")
-    resp = uds_request(uds_if, ECU_ADDR_2, TESTER_ADDR, request,
+    resp = uds_request(uds_if, ECU_ADDR_FUC, TESTER_ADDR, request,
                        expected_positive_sid=SID_3E + 0x40, allow_nrc=True)
     if resp is None or resp.responseType == 0:
         logger.log("功能寻址失败", is_error=True)
@@ -131,7 +131,7 @@ def main():
     logger.log("\n---------安全认证----------")
     request = [SID_27, 0x01]
     logger.log(f"请求: {bytes(request).hex().upper()}")
-    resp = uds_request(uds_if, ECU_ADDR_1, TESTER_ADDR, request,
+    resp = uds_request(uds_if, ECU_ADDR_PHY, TESTER_ADDR, request,
                        expected_positive_sid=SID_27 + 0x40, allow_nrc=True)
     if resp is None:
         logger.log("编程会话：无响应", is_error=True)
