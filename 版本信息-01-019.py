@@ -3,6 +3,7 @@ import os
 import datetime
 import time
 from ZXDoc import ZXDoc, ZDoCANCfg, ZUdsRequest, ZUdsPort, ZCANFrameType, ZCANTpVersion, ZErrorCode
+
 import sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -21,8 +22,8 @@ SUB_EXTENDED_SESSION = 0x03
 
 
 # DID 和测试数据
-DID_VIN_H = 0xF1
-DID_VIN_L = 0x90         # F190 车辆识别号查询
+DID_RUN_THE_PARTITION_QUERY_H = 0xF0
+DID_RUN_THE_PARTITION_QUERY_L = 0xF0                # F0F0 运行分区
 
 #WRITE_DATA = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A]
 
@@ -33,7 +34,7 @@ P2X_TIMEOUT_MS = 4000
 class TestLogger:
     def __init__(self):
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.log_path = os.path.join(os.getcwd(), f"UDS_TestLog-版本信息01-002_{timestamp}.txt")
+        self.log_path = os.path.join(os.getcwd(), f"UDS_TestLog-版本信息01-019_{timestamp}.txt")
         with open(self.log_path, "w", encoding="utf-8") as f:
             f.write(f"===== UDS 诊断测试开始 {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====\n")
         print(f"日志文件将保存至: {self.log_path}")
@@ -125,10 +126,6 @@ def main():
     steps = [
         ("默认会话", [SID_10, SUB_DEFAULT_SESSION], SID_10 + 0x40, True),
         ("扩展会话", [SID_10, SUB_EXTENDED_SESSION], SID_10 + 0x40, True),
-        #("启动例程", [SID_31, SUB_START_ROUTINE] + ROUTINE_ID, SID_31 + 0x40, True),
-        #("关闭DTC", [SID_85, SUB_DTC_OFF], SID_85 + 0x40, False),   # 非必要，失败继续
-        #("禁用收发", [SID_28, SUB_DISABLE_RX_TX, 0x03], SID_28 + 0x40, True),
-        #("编程会话", [SID_10, SUB_PROGRAMMING], SID_10 + 0x40, True),
     ]
     for name, req, expected, mandatory in steps:
         logger.log(f"\n[前置] {name} ({' '.join(f'{b:02X}' for b in req)})")
@@ -140,8 +137,8 @@ def main():
             return
 
     # ---------- 测试 22 服务 ----------
-    logger.log("\n[测试] 发送 22 F1 90 车辆识别号查询")
-    req_22 = [SID_22, DID_VIN_H, DID_VIN_L]
+    logger.log("\n[测试] 发送 22 F0 F0 运行分区查询")
+    req_22 = [SID_22, DID_RUN_THE_PARTITION_QUERY_H, DID_RUN_THE_PARTITION_QUERY_L]
     logger.log(f"请求: {bytes(req_22).hex().upper()}")
     resp = uds_request(uds_if, ECU_ADDR, TESTER_ADDR, req_22,
                        expected_positive_sid=SID_22 + 0x40, allow_nrc=False)
@@ -160,7 +157,7 @@ def main():
     else:
         logger.log("未收到期望的肯定响应", is_error=True)
 
-    # 关闭接口
+    # 清理
     uds_if = None
     zxdoc.disconnect()
 

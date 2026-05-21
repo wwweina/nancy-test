@@ -3,6 +3,7 @@ import os
 import datetime
 import time
 from ZXDoc import ZXDoc, ZDoCANCfg, ZUdsRequest, ZUdsPort, ZCANFrameType, ZCANTpVersion, ZErrorCode
+
 import sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -24,7 +25,6 @@ SUB_EXTENDED_SESSION = 0x03
 DID_VIN_H = 0xF1
 DID_VIN_L = 0x90         # F190 车辆识别号查询
 
-#WRITE_DATA = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A]
 
 P2_TIMEOUT_MS = 3000
 P2X_TIMEOUT_MS = 4000
@@ -125,10 +125,6 @@ def main():
     steps = [
         ("默认会话", [SID_10, SUB_DEFAULT_SESSION], SID_10 + 0x40, True),
         ("扩展会话", [SID_10, SUB_EXTENDED_SESSION], SID_10 + 0x40, True),
-        #("启动例程", [SID_31, SUB_START_ROUTINE] + ROUTINE_ID, SID_31 + 0x40, True),
-        #("关闭DTC", [SID_85, SUB_DTC_OFF], SID_85 + 0x40, False),   # 非必要，失败继续
-        #("禁用收发", [SID_28, SUB_DISABLE_RX_TX, 0x03], SID_28 + 0x40, True),
-        #("编程会话", [SID_10, SUB_PROGRAMMING], SID_10 + 0x40, True),
     ]
     for name, req, expected, mandatory in steps:
         logger.log(f"\n[前置] {name} ({' '.join(f'{b:02X}' for b in req)})")
@@ -140,7 +136,7 @@ def main():
             return
 
     # ---------- 测试 22 服务 ----------
-    logger.log("\n[测试] 发送 22 F1 90 车辆识别号查询")
+    logger.log("\n[测试] 发送 22 F1 90车辆识别号查询")
     req_22 = [SID_22, DID_VIN_H, DID_VIN_L]
     logger.log(f"请求: {bytes(req_22).hex().upper()}")
     resp = uds_request(uds_if, ECU_ADDR, TESTER_ADDR, req_22,
