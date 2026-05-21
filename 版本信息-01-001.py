@@ -2,6 +2,8 @@ import os
 import  datetime
 import time
 from ZXDoc import ZXDoc, ZDoCANCfg, ZUdsRequest, ZUdsPort, ZCANFrameType,ZCANTpVersion, ZErrorCode
+import sys, io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 CHANNEL_INDEX = 1    #激活CAN通道索引
 TESTER_ADDR = 0x7BA     #响应ID
